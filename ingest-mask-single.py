@@ -151,7 +151,18 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                 request_file=_REQUEST_FILE_NAME,
             )
             response = json.loads(response)
-            #IMAGE_EMBEDDING = response[0]["image_features"]
+            # Parse the response to extract IMAGE_EMBEDDING and other key information
+            response_dict = response[0]
+            response_content = response_dict['response']
+            predictions = response_content['predictions']
+            IMAGE_EMBEDDING = []
+            for prediction in predictions:
+                masks_per_prediction = prediction['masks_per_prediction']
+                for mask_info in masks_per_prediction:
+                    encoded_binary_mask = mask_info['encoded_binary_mask']
+                    iou_score = mask_info['iou_score']
+                    IMAGE_EMBEDDING.append(encoded_binary_mask)
+                    print(f"iou_score: {iou_score}")
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
         except Exception as e:
