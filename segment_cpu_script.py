@@ -3,6 +3,7 @@ import numpy as np
 import os
 import torch
 from PIL import Image
+import json
 
 # If you cloned Segment-Anything repo, make sure its path is accessible
 # For example:
@@ -54,6 +55,16 @@ for m in masks:
     input_points.append([cx, cy])
     # Label this point as foreground
     input_labels.append(1)
+
+# Store the variables in a JSON file
+data = {
+    "input_points": input_points,
+    "input_boxes": input_boxes,
+    "input_labels": input_labels
+}
+output_path = os.path.join(os.path.dirname(__file__), 'data', 'output.json')
+with open(output_path, 'w') as f:
+    json.dump(data, f, indent=4)
 
 # Optional: If you do not need prompt points/labels for this demonstration,
 # you could leave input_points and input_labels empty. For demonstration, we have them:
