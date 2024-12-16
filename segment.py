@@ -31,14 +31,14 @@ class Segment:
         print(masks[0].keys())
 
         # Write masks to a json file
-        output_path = os.path.join(os.path.dirname(__file__), 'data', 'samples', 'masks.json')
-        random_suffix = random.randint(1000, 9999)
-        output_path = output_path.replace(".json", f"_{random_suffix}.json")
-        os.makedirs(self.output_dir, exist_ok=True)
-        with open(output_path, 'w') as f:
-            json.dump(masks, f, indent=4)
+        # output_path = os.path.join(os.path.dirname(__file__), 'data', 'samples', 'masks.json')
+        # random_suffix = random.randint(1000, 9999)
+        # output_path = output_path.replace(".json", f"_{random_suffix}.json")
+        # os.makedirs(self.output_dir, exist_ok=True)
+        # with open(output_path, 'w') as f:
+        #     json.dump(masks, f, indent=4)
 
-        return masks['point_coords'], masks['bbox'], [1] * len(masks['point_coords'])
+        #return masks['point_coords'], masks['bbox'], [1] * len(masks['point_coords'])
 
 if __name__ == "__main__":
     segmenter = Segment()
