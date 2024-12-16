@@ -55,50 +55,61 @@ for m in masks:
     # Label this point as foreground
     input_labels.append(1)
 
+
+# Store the variables in a JSON file
+data = {
+    "input_points": input_points,
+    "input_boxes": input_boxes,
+    "input_labels": input_labels
+}
+output_path = os.path.join(os.path.dirname(__file__), 'data', 'output.json')
+with open(output_path, 'w') as f:
+    json.dump(data, f, indent=4)
+
 # Optional: If you do not need prompt points/labels for this demonstration,
 # you could leave input_points and input_labels empty. For demonstration, we have them:
 # input_points = []
 # input_labels = []
 
 # Visualization
-fig, ax = plt.subplots(figsize=(10, 10))
-ax.imshow(image_np)
+# fig, ax = plt.subplots(figsize=(10, 10))
+# ax.imshow(image_np)
 
 # Function to show box
-def show_box(box, ax):
-    x0, y0 = box[0], box[1]
-    w, h = box[2] - box[0], box[3] - box[1]
-    ax.add_patch(
-        plt.Rectangle((x0, y0), w, h, edgecolor="green", facecolor=(0, 0, 0, 0), lw=2)
-    )
+# def show_box(box, ax):
+#     x0, y0 = box[0], box[1]
+#     w, h = box[2] - box[0], box[3] - box[1]
+#     ax.add_patch(
+#         plt.Rectangle((x0, y0), w, h, edgecolor="green", facecolor=(0, 0, 0, 0), lw=2)
+#     )
 
-# Function to show mask
-def show_mask(mask, ax, random_color=False):
-    if not isinstance(mask, np.ndarray):
-        mask = np.array(mask)
-        mask = mask > 0
-    if random_color:
-        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-    else:
-        color = np.array([30 / 255, 144 / 255, 1.0, 0.6])
-    h, w = mask.shape[-2:]
-    mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
-    ax.imshow(mask_image)
+# # Function to show mask
+# def show_mask(mask, ax, random_color=False):
+#     if not isinstance(mask, np.ndarray):
+#         mask = np.array(mask)
+#         mask = mask > 0
+#     if random_color:
+#         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+#     else:
+#         color = np.array([30 / 255, 144 / 255, 1.0, 0.6])
+#     h, w = mask.shape[-2:]
+#     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+#     ax.imshow(mask_image)
 
-# Display each mask and bounding box
-for m in masks:
-    show_mask(m["segmentation"], ax)
-for box in input_boxes:
-    show_box(box, ax)
+# # Display each mask and bounding box
+# for m in masks:
+#     show_mask(m["segmentation"], ax)
+# for box in input_boxes:
+#     show_box(box, ax)
 
-# Plot input points if you want to visualize them
-for pt, lbl in zip(input_points, input_labels):
-    color = "red" if lbl == 1 else "blue"
-    ax.plot(pt[0], pt[1], marker="o", markersize=5, color=color)
+# # Plot input points if you want to visualize them
+# for pt, lbl in zip(input_points, input_labels):
+#     color = "red" if lbl == 1 else "blue"
+#     ax.plot(pt[0], pt[1], marker="o", markersize=5, color=color)
 
-ax.axis("off")
-plt.title("Segment Anything Model - Automatic Masks and Boxes")
-plt.show()
+# ax.axis("off")
+# plt.title("Segment Anything Model - Automatic Masks and Boxes")
+# plt.show()
 
 # The variables are now:
 # input_points: list of [x, y] coordinates for each object
