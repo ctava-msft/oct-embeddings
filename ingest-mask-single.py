@@ -11,6 +11,7 @@ import logging
 from tqdm.auto import tqdm
 import base64
 import cv2
+import numpy as np
 
 
 from segment import Segment
@@ -142,7 +143,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
     # get embeddings from endpoint
     response = None
     request_failed = False
-    IMAGE_EMBEDDING = None
+    IMAGE_EMBEDDING = []
     for r in range(MAX_RETRIES):
         try:
             response = workspace_ml_client.online_endpoints.invoke(
@@ -161,7 +162,15 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                 for mask_info in masks_per_prediction:
                     encoded_binary_mask = mask_info['encoded_binary_mask']
                     iou_score = mask_info['iou_score']
-                    IMAGE_EMBEDDING.append(encoded_binary_mask)
+                    # Decode the base64-encoded mask
+                    mask_bytes = base64.b64decode(encoded_binary_mask)
+                    nparr = np.frombuffer(mask_bytes, np.uint8)
+                    mask_image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+                    # Resize mask to reduce dimensionality
+                    mask_image_resized = cv2.resize(mask_image, (10, 10))
+                    # Flatten and convert to a list of floats
+                    mask_flattened = mask_image_resized.flatten().astype(float).tolist()
+                    IMAGE_EMBEDDING.extend(mask_flattened)
                     print(f"iou_score: {iou_score}")
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
