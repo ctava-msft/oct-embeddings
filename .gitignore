@@ -9,7 +9,4 @@ __pycache__
 *.png
 *.pkl
 *.pdf
-cells/*
-data/*.jsonl
-data/*.jpg
-data/fridgeObjects/annotations.jsonl
+*.pth

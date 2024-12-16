@@ -1,4 +1,9 @@
 from azure.ai.ml import MLClient
+from azure.ai.ml.entities import (
+    ManagedOnlineEndpoint,
+    ManagedOnlineDeployment,
+)
+from azure.ai.ml.entities import OnlineRequestSettings, ProbeSettings
 from azure.identity import (
     DefaultAzureCredential,
     InteractiveBrowserCredential
@@ -7,15 +12,6 @@ import time
 import logging
 import os
 from dotenv import load_dotenv
-import time, sys
-from azure.ai.ml.entities import (
-    ManagedOnlineEndpoint,
-    ManagedOnlineDeployment,
-)
-from azure.ai.ml.entities import OnlineRequestSettings, ProbeSettings
-import os
-import urllib
-from zipfile import ZipFile
 
 load_dotenv()
 
@@ -26,6 +22,7 @@ required_vars = [
     "SUBSCRIPTION_ID",
     "RESOURCE_GROUP",
     "WORKSPACE_NAME",
+    "MODEL_NAME"
     ]
 
 for var in required_vars:
@@ -45,6 +42,8 @@ try:
     subscription_id = os.getenv("SUBSCRIPTION_ID")
     resource_group = os.getenv("RESOURCE_GROUP")
     workspace_name = os.getenv("WORKSPACE_NAME")
+    model_name = os.getenv("MODEL_NAME")
+    instance_type = os.getenv("INSTANCE_TYPE")
 
     workspace_ml_client = MLClient(
         credential,
@@ -61,7 +60,6 @@ try:
         registry_name="azureml",
     )
 
-    model_name = "OpenAI-CLIP-Image-Text-Embeddings-vit-base-patch32"
     foundation_model = registry_ml_client.models.get(name=model_name, label="latest")
     print(
         f"\n\nUsing model name: {foundation_model.name}, version: {foundation_model.version}, id: {foundation_model.id} for inferencing"
@@ -69,26 +67,25 @@ try:
 
     # Endpoint names need to be unique in a region, hence using timestamp to create unique endpoint name
     timestamp = int(time.time())
-    online_endpoint_name = "clip-embeddings-" + str(timestamp)
+    online_endpoint_name = model_name + "-" + str(timestamp)
     # Create an online endpoint
     endpoint = ManagedOnlineEndpoint(
         name=online_endpoint_name,
         description="Online endpoint for "
-        + foundation_model.name
-        + ", for image-text-embeddings task",
+        + foundation_model.name,
         auth_mode="key",
     )
     workspace_ml_client.begin_create_or_update(endpoint).wait()
 
 
-    deployment_name = "embeddings-mlflow-deploy"
+    deployment_name = f"{model_name[:16]}-mlflow-deploy"
 
     # Create a deployment
     demo_deployment = ManagedOnlineDeployment(
         name=deployment_name,
         endpoint_name=online_endpoint_name,
         model=foundation_model.id,
-        instance_type="Standard_E4s_v3",
+        instance_type=instance_type,
         instance_count=1,
         request_settings=OnlineRequestSettings(
             max_concurrent_requests_per_instance=1,

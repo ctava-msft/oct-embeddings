@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AZURE_AISEARCH_KEY",
+    "AISEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
     "SUBSCRIPTION_ID",
@@ -36,7 +36,7 @@ for var in required_vars:
         logger.error(f"Missing required environment variable: {var}")
         raise ValueError(f"Missing required environment variable: {var}")
 
-AZURE_AISEARCH_KEY = os.getenv("AZURE_AISEARCH_KEY")
+AISEARCH_KEY = os.getenv("AISEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
@@ -62,7 +62,7 @@ workspace_ml_client = MLClient(
 )
 
 
-TEXT_QUERY = "a photo of a milk bottle"
+TEXT_QUERY = "provide an oct normal image"
 K = 5  # number of results to retrieve
 _REQUEST_FILE_NAME = "request.json"
 
@@ -101,7 +101,7 @@ search_request = {
 
 
 response = requests.post(
-    QUERY_REQUEST_URL, json=search_request, headers={"api-key": AZURE_AISEARCH_KEY}
+    QUERY_REQUEST_URL, json=search_request, headers={"api-key": AISEARCH_KEY}
 )
 neighbors = json.loads(response.text)["value"]
 

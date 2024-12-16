@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AZURE_AISEARCH_KEY",
+    "AISEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
     "SUBSCRIPTION_ID",
@@ -32,7 +32,7 @@ for var in required_vars:
         logger.error(f"Missing required environment variable: {var}")
         raise ValueError(f"Missing required environment variable: {var}")
 
-AZURE_AISEARCH_KEY = os.getenv("AZURE_AISEARCH_KEY")
+AISEARCH_KEY = os.getenv("AISEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
@@ -64,20 +64,15 @@ ADD_DATA_REQUEST_URL = "https://{search_service_name}.search.windows.net/indexes
     api_version=API_VERSION,
 )
 
-# Change to a different location if you prefer
 dataset_parent_dir = "./data"
-download_url = "https://automlsamplenotebookdata.blob.core.windows.net/image-classification/fridgeObjects.zip"
-
-# Extract current dataset name from dataset url
-dataset_name = os.path.split(download_url)[-1].split(".")[0]
-# Get dataset path for later use
+dataset_name = "OCT-2"
 dataset_dir = os.path.join(dataset_parent_dir, dataset_name)
 
 image_paths = [
     os.path.join(dp, f)
     for dp, dn, filenames in os.walk(dataset_dir)
     for f in filenames
-    if os.path.splitext(f)[1] == ".jpg"
+    if os.path.splitext(f)[1] == ".jpeg"
 ]
 
 
@@ -115,6 +110,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             )
             response = json.loads(response)
             IMAGE_EMBEDDING = response[0]["image_features"]
+            print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
         except Exception as e:
             print(f"Unable to get embeddings for image {FILENAME}: {e}")
@@ -140,5 +136,9 @@ for idx, image_path in enumerate(tqdm(image_paths)):
         response = requests.post(
             ADD_DATA_REQUEST_URL,
             json=add_data_request,
-            headers={"api-key": AZURE_AISEARCH_KEY},
+            headers={"api-key": AISEARCH_KEY},
         )
+        if response.status_code == 200:
+            print(f"Successfully added data to index for image {FILENAME}.")
+        else:
+            print(f"Failed to add data to index for image {FILENAME}. Response: {response.content}")

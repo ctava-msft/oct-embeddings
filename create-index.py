@@ -9,8 +9,9 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AZURE_AISEARCH_KEY",
-    "SEARCH_SERVICE_NAME"
+    "AISEARCH_KEY",
+    "SEARCH_SERVICE_NAME",
+    "SEARCH_INDEX_NAME",
 ]
 
 for var in required_vars:
@@ -19,17 +20,16 @@ for var in required_vars:
         raise ValueError(f"Missing required environment variable: {var}")
 
 
-AZURE_AISEARCH_KEY = os.getenv("AZURE_AISEARCH_KEY")
+AISEARCH_KEY = os.getenv("AISEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
-
-INDEX_NAME = "fridge-objects-index"
+SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 API_VERSION = "2023-07-01-Preview"
 CREATE_INDEX_REQUEST_URL = "https://{search_service_name}.search.windows.net/indexes?api-version={api_version}".format(
     search_service_name=SEARCH_SERVICE_NAME, api_version=API_VERSION
 )
 
 create_request = {
-    "name": INDEX_NAME,
+    "name": SEARCH_INDEX_NAME,
     "fields": [
         {
             "name": "id",
@@ -74,5 +74,7 @@ create_request = {
 response = requests.post(
     CREATE_INDEX_REQUEST_URL,
     json=create_request,
-    headers={"api-key": AZURE_AISEARCH_KEY},
+    headers={"api-key": AISEARCH_KEY},
 )
+response.raise_for_status()
+print(response.json())
