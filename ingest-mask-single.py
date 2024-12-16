@@ -156,16 +156,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             response_dict = response[0]
             response_content = response_dict['response']
             predictions = response_content['predictions']
-            IMAGE_EMBEDDING = []
-            total_masks = 0
-            for prediction in predictions:
-                total_masks += len(prediction['masks_per_prediction'])
-
-            size_per_mask = int(np.ceil(512 / total_masks))
-            resize_dim = int(np.ceil(np.sqrt(size_per_mask)))
-            # Ensure resize_dim is such that each mask embedding length is size_per_mask
-            mask_embedding_length = resize_dim * resize_dim
-            IMAGE_EMBEDDING = []
+            IMAGE_EMBEDDINGS = []
             for prediction in predictions:
                 masks_per_prediction = prediction['masks_per_prediction']
                 for mask_info in masks_per_prediction:
@@ -175,21 +166,15 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                     mask_bytes = base64.b64decode(encoded_binary_mask)
                     nparr = np.frombuffer(mask_bytes, np.uint8)
                     mask_image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                    # Resize mask to match size_per_mask
-                    mask_image_resized = cv2.resize(mask_image, (resize_dim, resize_dim))
-                    # Flatten and convert to a list of floats
-                    mask_flattened = mask_image_resized.flatten().astype(float).tolist()
-                    # Pad or truncate to size_per_mask
-                    if len(mask_flattened) < size_per_mask:
-                        mask_flattened += [0.0] * (size_per_mask - len(mask_flattened))
-                    else:
-                        mask_flattened = mask_flattened[:size_per_mask]
-                    IMAGE_EMBEDDING.extend(mask_flattened)
-            # If IMAGE_EMBEDDING is less than 512, pad with zeros
-            if len(IMAGE_EMBEDDING) < 512:
-                IMAGE_EMBEDDING += [0.0] * (512 - len(IMAGE_EMBEDDING))
-            elif len(IMAGE_EMBEDDING) > 512:
-                IMAGE_EMBEDDING = IMAGE_EMBEDDING[:512]  # Ensure length is 512
+                    # Flatten the mask image as floats
+                    mask_flattened = mask_image.flatten().astype(float).tolist()
+                    # Ensure length is desired length
+                    desired_length = 512
+                    if len(mask_flattened) < desired_length:
+                        mask_flattened += [0.0] * (desired_length - len(mask_flattened))
+                    elif len(mask_flattened) > desired_length:
+                        mask_flattened = mask_flattened[:desired_length]
+                    IMAGE_EMBEDDINGS.append(mask_flattened)
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
         except Exception as e:
@@ -201,14 +186,14 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             else:
                 print(f"attempt {r} failed, retrying")
 
-    # add embedding to index
-    if IMAGE_EMBEDDING:
+    # add embedding(s) to index
+    for idx, embedding in enumerate(IMAGE_EMBEDDINGS):
         add_data_request = {
             "value": [
                 {
-                    "id": str(ID),
+                    "id": f"{ID}_{idx}",
                     "filename": FILENAME,
-                    "imageEmbeddings": IMAGE_EMBEDDING,
+                    "imageEmbeddings": embedding,
                     "@search.action": "upload",
                 }
             ]
@@ -219,6 +204,6 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             headers={"api-key": AISEARCH_KEY},
         )
         if response.status_code == 200:
-            print(f"Successfully added data to index for image {FILENAME}.")
+            print(f"Successfully added embedding {idx} for image {FILENAME}.")
         else:
-            print(f"Failed to add data to index for image {FILENAME}. Response: {response.content}")
+            print(f"Failed to add embedding {idx} for image {FILENAME}. Response: {response.content}")
