@@ -4,9 +4,6 @@
 *.npy
 *.zip
 __pycache__
-*.jpg
-*.json
-*.png
 *.pkl
 *.pdf
 *.pth
