@@ -129,7 +129,7 @@ segmenter = Segment()
 for idx, image_path in enumerate(tqdm(image_paths)):
     ID = idx
     FILENAME = image_path
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
 
     # read image and get masks
     # image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -151,12 +151,12 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                 request_file=_REQUEST_FILE_NAME,
             )
             response = json.loads(response)
-            IMAGE_EMBEDDING = response[0]["image_features"]
+            #IMAGE_EMBEDDING = response[0]["image_features"]
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
         except Exception as e:
             print(f"Unable to get embeddings for image {FILENAME}: {e}")
-            print(response)
+            #print(response)
             if r == MAX_RETRIES - 1:
                 print(f"attempt {r} failed, reached retry limit")
                 request_failed = True
