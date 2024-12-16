@@ -157,6 +157,13 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             response_content = response_dict['response']
             predictions = response_content['predictions']
             IMAGE_EMBEDDING = []
+            total_masks = 0
+            for prediction in predictions:
+                total_masks += len(prediction['masks_per_prediction'])
+
+            size_per_mask = int(np.ceil(512 / total_masks))
+            resize_dim = int(np.ceil(np.sqrt(size_per_mask)))
+
             for prediction in predictions:
                 masks_per_prediction = prediction['masks_per_prediction']
                 for mask_info in masks_per_prediction:
@@ -166,8 +173,8 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                     mask_bytes = base64.b64decode(encoded_binary_mask)
                     nparr = np.frombuffer(mask_bytes, np.uint8)
                     mask_image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                    # Resize mask to reduce dimensionality
-                    mask_image_resized = cv2.resize(mask_image, (10, 10))
+                    # Resize mask to match expected length
+                    mask_image_resized = cv2.resize(mask_image, (resize_dim, resize_dim))
                     # Flatten and convert to a list of floats
                     mask_flattened = mask_image_resized.flatten().astype(float).tolist()
                     IMAGE_EMBEDDING.extend(mask_flattened)
