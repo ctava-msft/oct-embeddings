@@ -163,12 +163,9 @@ for idx, image_path in enumerate(tqdm(image_paths)):
 
             size_per_mask = int(np.ceil(512 / total_masks))
             resize_dim = int(np.ceil(np.sqrt(size_per_mask)))
-            # Ensure resize_dim is such that IMAGE_EMBEDDING length is 512
-            target_length = 512
-            actual_length = total_masks * (resize_dim ** 2)
-            if actual_length != target_length:
-                resize_dim = int(np.sqrt(target_length // total_masks))
-                print(resize_dim)
+            # Ensure resize_dim is such that each mask embedding length is size_per_mask
+            mask_embedding_length = resize_dim * resize_dim
+            IMAGE_EMBEDDING = []
             for prediction in predictions:
                 masks_per_prediction = prediction['masks_per_prediction']
                 for mask_info in masks_per_prediction:
@@ -178,12 +175,21 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                     mask_bytes = base64.b64decode(encoded_binary_mask)
                     nparr = np.frombuffer(mask_bytes, np.uint8)
                     mask_image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                    # Resize mask to match expected length
+                    # Resize mask to match size_per_mask
                     mask_image_resized = cv2.resize(mask_image, (resize_dim, resize_dim))
                     # Flatten and convert to a list of floats
                     mask_flattened = mask_image_resized.flatten().astype(float).tolist()
-                    IMAGE_EMBEDDING = mask_flattened[:512]  # Ensure length is 512
-                    print(f"iou_score: {iou_score}")
+                    # Pad or truncate to size_per_mask
+                    if len(mask_flattened) < size_per_mask:
+                        mask_flattened += [0.0] * (size_per_mask - len(mask_flattened))
+                    else:
+                        mask_flattened = mask_flattened[:size_per_mask]
+                    IMAGE_EMBEDDING.extend(mask_flattened)
+            # If IMAGE_EMBEDDING is less than 512, pad with zeros
+            if len(IMAGE_EMBEDDING) < 512:
+                IMAGE_EMBEDDING += [0.0] * (512 - len(IMAGE_EMBEDDING))
+            elif len(IMAGE_EMBEDDING) > 512:
+                IMAGE_EMBEDDING = IMAGE_EMBEDDING[:512]  # Ensure length is 512
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
         except Exception as e:
