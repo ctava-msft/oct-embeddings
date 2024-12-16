@@ -1,19 +1,16 @@
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
 from PIL import Image
-import json
-
-# If you cloned Segment-Anything repo, make sure its path is accessible
-# For example:
-# sys.path.append("path/to/segment-anything")
+import random
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 # Load the image
-
-image_name = 'image.png'
-#image_name = 'oct-id-105.jpg'
+#image_name = 'image.png'
+image_name = 'oct-id-105.jpg'
+#image_name = 'NORMAL-9251-1.jpeg'
 #image_name = 'kaggle-NORMAL-3099713-1.jpg'
 #image_name = 'oct-500-3-10301-1.bmp'
 image_path = os.path.join(os.path.dirname(__file__), 'data', 'samples', image_name)
@@ -31,6 +28,9 @@ mask_generator = SamAutomaticMaskGenerator(sam)   # Removed device argument
 
 # Generate masks automatically (no prompts)
 masks = mask_generator.generate(image_np)
+
+for m in masks:
+    m["segmentation"] = m["segmentation"].tolist()
 
 # Prepare input_points, input_boxes, input_labels
 # input_boxes will be derived from mask bounding boxes
@@ -51,18 +51,22 @@ for m in masks:
 
     # Pick a point in the center of the box as an input point
     cx = int((x0 + x1) / 2)
-    cy = int((y0 + y1) / 2)
+    cy = int((y0 + x1) / 2)
     input_points.append([cx, cy])
     # Label this point as foreground
     input_labels.append(1)
 
 # Store the variables in a JSON file
 data = {
+    "masks": masks,
     "input_points": input_points,
     "input_boxes": input_boxes,
     "input_labels": input_labels
 }
-output_path = os.path.join(os.path.dirname(__file__), 'data', 'output.json')
+output_path = os.path.join(os.path.dirname(__file__), 'data', 'masks.json')
+random_suffix = random.randint(1000, 9999)
+output_path = output_path.replace(".json", f"_{random_suffix}.json")
+
 with open(output_path, 'w') as f:
     json.dump(data, f, indent=4)
 

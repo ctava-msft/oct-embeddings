@@ -7,3 +7,7 @@ __pycache__
 *.pkl
 *.pdf
 *.pth
+data/*.json
+data/samples/*.json
+data/fridgeObjects/
+_output-*/
