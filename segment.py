@@ -21,13 +21,17 @@ class Segment:
 
     def process_image(self, image):
         masks = self.mask_generator.generate(image)
-        input_points = [mask['point_coords'][0] for mask in masks]
-        input_boxes = [mask['bbox'] for mask in masks]
+        input_points = []
+        input_boxes = []
+        for mask in masks:
+            bbox = mask['bbox']
+            x, y, w, h = bbox
+            # Calculate the center point of the bounding box
+            x_center = x + w / 2
+            y_center = y + h / 2
+            input_points.append([[x_center, y_center]])
+            input_boxes.append(bbox)
         input_labels = [1] * len(masks)
-
-        # #Visualize the masks
-        # print(len(masks))
-        # print(masks[0].keys())
 
         return input_points, input_boxes, input_labels
 
