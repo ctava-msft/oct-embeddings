@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
+import json
+#import matplotlib.pyplot as plt
 import numpy as np
 import os
-import torch
+#import torch
 from PIL import Image
 
 # If you cloned Segment-Anything repo, make sure its path is accessible
