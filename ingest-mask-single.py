@@ -163,7 +163,12 @@ for idx, image_path in enumerate(tqdm(image_paths)):
 
             size_per_mask = int(np.ceil(512 / total_masks))
             resize_dim = int(np.ceil(np.sqrt(size_per_mask)))
-
+            # Ensure resize_dim is such that IMAGE_EMBEDDING length is 512
+            target_length = 512
+            actual_length = total_masks * (resize_dim ** 2)
+            if actual_length != target_length:
+                resize_dim = int(np.sqrt(target_length // total_masks))
+                print(resize_dim)
             for prediction in predictions:
                 masks_per_prediction = prediction['masks_per_prediction']
                 for mask_info in masks_per_prediction:
@@ -177,7 +182,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                     mask_image_resized = cv2.resize(mask_image, (resize_dim, resize_dim))
                     # Flatten and convert to a list of floats
                     mask_flattened = mask_image_resized.flatten().astype(float).tolist()
-                    IMAGE_EMBEDDING.extend(mask_flattened)
+                    IMAGE_EMBEDDING = mask_flattened[:512]  # Ensure length is 512
                     print(f"iou_score: {iou_score}")
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break
