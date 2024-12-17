@@ -12,6 +12,8 @@ from tqdm.auto import tqdm
 import base64
 import matplotlib.pyplot as plt
 import numpy as np
+from azure.cosmos import CosmosClient, exceptions
+from sklearn.metrics.pairwise import cosine_similarity
 
 from PIL import Image
 
@@ -29,6 +31,7 @@ required_vars = [
     "WORKSPACE_NAME",
     "ENDPOINT_NAME",
     "DEPLOYMENT_NAME",
+    "COSMOSDB_ENDPOINT",
 ]
 
 for var in required_vars:
@@ -36,13 +39,10 @@ for var in required_vars:
         logger.error(f"Missing required environment variable: {var}")
         raise ValueError(f"Missing required environment variable: {var}")
 
-SEARCH_KEY = os.getenv("SEARCH_KEY")
-SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
-SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
+cosmosdb_endpoint = os.getenv("COSMOSDB_ENDPOINT")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
 resource_group = os.getenv("RESOURCE_GROUP")
 workspace_name = os.getenv("WORKSPACE_NAME")
-API_VERSION = "2023-07-01-Preview"
 endpoint_name=os.getenv("ENDPOINT_NAME")
 deployment_name=os.getenv("DEPLOYMENT_NAME")
 
@@ -88,62 +88,66 @@ def run_query(query):
     )
     response = json.loads(response)
     QUERY_TEXT_EMBEDDING = response[0]["text_features"]
+    QUERY_TEXT_EMBEDDING = np.squeeze(QUERY_TEXT_EMBEDDING)  # Ensure it's 1D
 
     # Enhanced logging for embedding
     logger.debug(f"Query Text Embedding: {QUERY_TEXT_EMBEDDING}")
 
-    QUERY_REQUEST_URL = "https://{search_service_name}.search.windows.net/indexes/{index_name}/docs/search?api-version={api_version}".format(
-        search_service_name=SEARCH_SERVICE_NAME,
-        index_name=SEARCH_INDEX_NAME,
-        api_version=API_VERSION,
-    )
+    # Initialize Cosmos DB client
+    client = CosmosClient(cosmosdb_endpoint, credential=credential, consistency_level="Session")
+    database = client.get_database_client('cosmosoct')  # Use your database name
+    container = database.get_container_client('products')  # Use your container name
 
-    # Adjust search parameters
-    search_request = {
-        "vectors": [{"value": QUERY_TEXT_EMBEDDING, "fields": "imageEmbeddings", "k": K}],
-        #"filter": f"imagetype eq '{query}'",
-        "select": "filename, imagetype, imageEmbeddings",
-        "top": 50
-    }
+    # Fetch items from Cosmos DB
+    items = list(container.read_all_items())
+    stored_embeddings = [np.squeeze(item['embedding']) for item in items]  # Ensure each embedding is 1D
+    filenames = [item.get('filename', 'unknown') for item in items]  # Adjust as needed
 
-    logger.info(f"Search Request: {search_request}")
+    # #neighbors = response_json["value"]
+    # K1, K2 = 3, 4
 
-    response = requests.post(
-        QUERY_REQUEST_URL, json=search_request, headers={"api-key": SEARCH_KEY}
-    )
-    #logger.debug(f"Search Response: {response.text}")
-    if response.status_code != 200:
-        logger.error(f"Search request failed with status code {response.status_code}: {response.text}")
-        raise ValueError(f"Search request failed with status code {response.status_code}")
-    try:
-        response_json = json.loads(response.text)
-        neighbors = response_json["value"]
-    except KeyError:
-        logger.error(f"'value' key not found in the response: {response_json}")
-        raise
+    # def make_pil_image(image_path):
+    #     pil_image = Image.open(image_path)
+    #     return pil_image
 
-    K1, K2 = 3, 4
+    # _, axes = plt.subplots(nrows=K1 + 1, ncols=K2, figsize=(64, 64))
+    # for i in range(K1 + 1):
+    #     for j in range(K2):
+    #         axes[i, j].axis("off")
 
-    def make_pil_image(image_path):
-        pil_image = Image.open(image_path)
-        return pil_image
+    # i, j = 0, 0
 
-    _, axes = plt.subplots(nrows=K1 + 1, ncols=K2, figsize=(64, 64))
-    for i in range(K1 + 1):
-        for j in range(K2):
-            axes[i, j].axis("off")
+    # for neighbor in items:
+    #     pil_image = make_pil_image(neighbor["filename"])
+    #     axes[i, j].imshow(np.asarray(pil_image), aspect="auto")
+    #     axes[i, j].text(1, 1, "{:.4f}".format(neighbor["@search.score"]), fontsize=32)
 
-    i, j = 0, 0
+    #     j += 1
+    #     if j == K2:
+    #         i += 1
+    #         j = 0
 
-    for neighbor in neighbors:
-        pil_image = make_pil_image(neighbor["filename"])
-        axes[i, j].imshow(np.asarray(pil_image), aspect="auto")
-        axes[i, j].text(1, 1, "{:.4f}".format(neighbor["@search.score"]), fontsize=32)
+    # plt.show()
 
-        j += 1
-        if j == K2:
-            i += 1
-            j = 0
+
+    # Compute cosine similarity
+    similarities = cosine_similarity([QUERY_TEXT_EMBEDDING], stored_embeddings)[0]
+
+    # Get top K results
+    K = 4
+    top_k_indices = similarities.argsort()[-K:][::-1]
+    top_k_filenames = [filenames[i] for i in top_k_indices]
+    top_k_scores = [similarities[i] for i in top_k_indices]
+
+    # Plot results
+    _, axes = plt.subplots(nrows=1, ncols=K, figsize=(16, 4))
+    for ax in axes:
+        ax.axis("off")
+
+    for idx, (filename, score) in enumerate(zip(top_k_filenames, top_k_scores)):
+        pil_image = Image.open(filename)
+        axes[idx].imshow(np.asarray(pil_image), aspect="auto")
+        axes[idx].set_title(f"Score: {score:.4f}", fontsize=12)
 
     plt.show()
 

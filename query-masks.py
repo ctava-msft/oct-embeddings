@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AISEARCH_KEY",
+    "SEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
     "SUBSCRIPTION_ID",
@@ -36,7 +36,7 @@ for var in required_vars:
         logger.error(f"Missing required environment variable: {var}")
         raise ValueError(f"Missing required environment variable: {var}")
 
-AISEARCH_KEY = os.getenv("AISEARCH_KEY")
+SEARCH_KEY = os.getenv("SEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
@@ -101,7 +101,7 @@ deployment_name=os.getenv("DEPLOYMENT_NAME")
 
 
 # response = requests.post(
-#     QUERY_REQUEST_URL, json=search_request, headers={"api-key": AISEARCH_KEY}
+#     QUERY_REQUEST_URL, json=search_request, headers={"api-key": SEARCH_KEY}
 # )
 # neighbors = json.loads(response.text)["value"]
 

@@ -36,13 +36,13 @@ for var in required_vars:
 SEARCH_KEY = os.getenv("SEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
-SEARCH_INDEX_VECTOR_DIMENSION=os.getenv("SEARCH_INDEX_VECTOR_DIMENSION")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
 resource_group = os.getenv("RESOURCE_GROUP")
 workspace_name = os.getenv("WORKSPACE_NAME")
 API_VERSION = "2023-07-01-Preview"
 endpoint_name=os.getenv("ENDPOINT_NAME")
 deployment_name=os.getenv("DEPLOYMENT_NAME")
+SEARCH_INDEX_VECTOR_DIMENSION=os.getenv("SEARCH_INDEX_VECTOR_DIMENSION")
 
 _REQUEST_FILE_NAME = "request.json"
 

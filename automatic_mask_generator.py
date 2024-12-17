@@ -24,7 +24,7 @@ def show_anns(anns):
         img[m] = color_mask
     ax.imshow(img)
 
-image_paths1 = "./data/samples/normal.jpeg"
+image_paths1 = "./data/samples/normal.jpg"
 image = cv2.imread(image_paths1)
 if image is None:
     print(f"Failed to load image from {image_paths1}")

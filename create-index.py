@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AISEARCH_KEY",
+    "SEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
     "SEARCH_INDEX_VECTOR_DIMENSION"
@@ -21,7 +21,7 @@ for var in required_vars:
         raise ValueError(f"Missing required environment variable: {var}")
 
 
-AISEARCH_KEY = os.getenv("AISEARCH_KEY")
+SEARCH_KEY = os.getenv("SEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 SEARCH_INDEX_VECTOR_DIMENSION = os.getenv("SEARCH_INDEX_VECTOR_DIMENSION")
@@ -84,7 +84,7 @@ create_request = {
 response = requests.post(
     CREATE_INDEX_REQUEST_URL,
     json=create_request,
-    headers={"api-key": AISEARCH_KEY},
+    headers={"api-key": SEARCH_KEY},
 )
 response.raise_for_status()
 print(response.json())

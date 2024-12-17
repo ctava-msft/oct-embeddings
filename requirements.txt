@@ -1,4 +1,5 @@
 azure-ai-ml
+azure-cosmos
 cuda-python
 einops
 imageio
@@ -18,6 +19,7 @@ pytest
 scipy
 spacy
 setuptools
+scikit-learn
 scikit-image
 smop
 torch

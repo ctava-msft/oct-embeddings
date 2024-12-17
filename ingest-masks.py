@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 required_vars = [
-    "AISEARCH_KEY",
+    "SEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
     "SUBSCRIPTION_ID",
@@ -36,7 +36,7 @@ for var in required_vars:
         logger.error(f"Missing required environment variable: {var}")
         raise ValueError(f"Missing required environment variable: {var}")
 
-AISEARCH_KEY = os.getenv("AISEARCH_KEY")
+SEARCH_KEY = os.getenv("SEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
@@ -152,7 +152,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
         response = requests.post(
             ADD_DATA_REQUEST_URL,
             json=add_data_request,
-            headers={"api-key": AISEARCH_KEY},
+            headers={"api-key": SEARCH_KEY},
         )
         if response.status_code == 200:
             print(f"Successfully added data to index for image {FILENAME}.")
