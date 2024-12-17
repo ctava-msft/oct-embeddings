@@ -12,6 +12,7 @@ required_vars = [
     "AISEARCH_KEY",
     "SEARCH_SERVICE_NAME",
     "SEARCH_INDEX_NAME",
+    "SEARCH_INDEX_VECTOR_DIMENSION"
 ]
 
 for var in required_vars:
@@ -23,6 +24,7 @@ for var in required_vars:
 AISEARCH_KEY = os.getenv("AISEARCH_KEY")
 SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
 SEARCH_INDEX_NAME = os.getenv("SEARCH_INDEX_NAME")
+SEARCH_INDEX_VECTOR_DIMENSION = os.getenv("SEARCH_INDEX_VECTOR_DIMENSION")
 API_VERSION = "2023-07-01-Preview"
 CREATE_INDEX_REQUEST_URL = "https://{search_service_name}.search.windows.net/indexes?api-version={api_version}".format(
     search_service_name=SEARCH_SERVICE_NAME, api_version=API_VERSION
@@ -52,8 +54,16 @@ create_request = {
             "type": "Collection(Edm.Single)",
             "searchable": True,
             "retrievable": True,
-            "dimensions": 512,
+            "dimensions": SEARCH_INDEX_VECTOR_DIMENSION,
             "vectorSearchConfiguration": "my-vector-config",
+        },
+        {
+            "name": "imagetype",
+            "type": "Edm.String",
+            "searchable": True,
+            "filterable": True,
+            "sortable": True,
+            "retrievable": True,
         },
     ],
     "vectorSearch": {

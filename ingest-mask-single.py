@@ -168,12 +168,6 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                     mask_image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
                     # Flatten the mask image as floats
                     mask_flattened = mask_image.flatten().astype(float).tolist()
-                    # Ensure length is desired length
-                    desired_length = 512
-                    if len(mask_flattened) < desired_length:
-                        mask_flattened += [0.0] * (desired_length - len(mask_flattened))
-                    elif len(mask_flattened) > desired_length:
-                        mask_flattened = mask_flattened[:desired_length]
                     IMAGE_EMBEDDINGS.append(mask_flattened)
             print(f"Successfully retrieved embeddings for image {FILENAME}.")
             break

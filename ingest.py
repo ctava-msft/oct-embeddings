@@ -25,6 +25,7 @@ required_vars = [
     "WORKSPACE_NAME",
     "ENDPOINT_NAME",
     "DEPLOYMENT_NAME",
+    "SEARCH_INDEX_VECTOR_DIMENSION"
 ]
 
 for var in required_vars:
@@ -41,6 +42,7 @@ workspace_name = os.getenv("WORKSPACE_NAME")
 API_VERSION = "2023-07-01-Preview"
 endpoint_name=os.getenv("ENDPOINT_NAME")
 deployment_name=os.getenv("DEPLOYMENT_NAME")
+SEARCH_INDEX_VECTOR_DIMENSION=os.getenv("SEARCH_INDEX_VECTOR_DIMENSION")
 
 _REQUEST_FILE_NAME = "request.json"
 
@@ -48,11 +50,22 @@ def read_image(image_path):
     with open(image_path, "rb") as f:
         return f.read()
 
-def make_request_images(image_path):
+def make_request_images(image_path, text):
     request_json = {
         "input_data": {
             "columns": ["image", "text"],
-            "data": [[base64.encodebytes(read_image(image_path)).decode("utf-8"), ""]],
+            "index": [0],
+            "data": [
+                {
+                    "image": base64.encodebytes(read_image(image_path)).decode("utf-8"),
+                    "text": text
+                }
+            ],
+        },
+        "params": {
+            "image_standardization_jpeg_compression_ratio": 75,
+            "image_standardization_image_size": 512,
+            "get_scaling_factor": True
         }
     }
     with open(_REQUEST_FILE_NAME, "wt") as f:
@@ -64,9 +77,10 @@ ADD_DATA_REQUEST_URL = "https://{search_service_name}.search.windows.net/indexes
     api_version=API_VERSION,
 )
 
-dataset_parent_dir = "./data"
-dataset_name = "OCT-2"
-dataset_dir = os.path.join(dataset_parent_dir, dataset_name)
+# Get dataset
+idm=100
+dataset_dir = './data/OCT-5/DRUSEN'
+image_type = "drusen"
 
 image_paths = [
     os.path.join(dp, f)
@@ -75,13 +89,11 @@ image_paths = [
     if os.path.splitext(f)[1] == ".jpeg"
 ]
 
-
 try:
     credential = DefaultAzureCredential()
     credential.get_token("https://management.azure.com/.default")
 except Exception as ex:
     credential = InteractiveBrowserCredential()
-
 
 workspace_ml_client = MLClient(
     credential=credential,
@@ -91,12 +103,13 @@ workspace_ml_client = MLClient(
 )
 
 for idx, image_path in enumerate(tqdm(image_paths)):
-    ID = idx
+    ID = (idx+1) * idm
     FILENAME = image_path
+    print(f"Processing image {FILENAME}")
     MAX_RETRIES = 3
 
     # get embedding from endpoint
-    embedding_request = make_request_images(image_path)
+    embedding_request = make_request_images(image_path, image_type)
 
     response = None
     request_failed = False
@@ -109,8 +122,9 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                 request_file=_REQUEST_FILE_NAME,
             )
             response = json.loads(response)
+            print(response)
             IMAGE_EMBEDDING = response[0]["image_features"]
-            print(f"Successfully retrieved embeddings for image {FILENAME}.")
+            IMAGE_EMBEDDING = IMAGE_EMBEDDING[0]
             break
         except Exception as e:
             print(f"Unable to get embeddings for image {FILENAME}: {e}")
@@ -128,6 +142,7 @@ for idx, image_path in enumerate(tqdm(image_paths)):
                 {
                     "id": str(ID),
                     "filename": FILENAME,
+                    "imagetype": image_type,  # Added imagetype field
                     "imageEmbeddings": IMAGE_EMBEDDING,
                     "@search.action": "upload",
                 }
@@ -138,7 +153,4 @@ for idx, image_path in enumerate(tqdm(image_paths)):
             json=add_data_request,
             headers={"api-key": AISEARCH_KEY},
         )
-        if response.status_code == 200:
-            print(f"Successfully added data to index for image {FILENAME}.")
-        else:
-            print(f"Failed to add data to index for image {FILENAME}. Response: {response.content}")
+        print(response.json())
